@@ -1,6 +1,7 @@
 #include "stdio.h"
 #include "string.h"
 
+#define UCHAR unsigned char
 #define VOID void
 #define FLOAT float
 #define INT int
