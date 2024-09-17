@@ -9,6 +9,9 @@
 #define OUT
 #define INOUT
 
+#define DT (0.01)
+
+
 #define CHECK_PTR(x,...) 		\
 do{					\
 if(x == NULL){ 				\
@@ -36,6 +39,7 @@ typedef struct BICYCLE_MODEL_TAG
 	float ddy;
 	float psi; /*heading angle */
 	float dpsi;
+	float ddpsi;
 	float F_xf;
 	float F_xr;
 	float F_yf;
@@ -67,8 +71,26 @@ VOID BicycleModel_Init(INOUT BICYCLE_MODEL_S *pstM)
 	pstM->b = 1;
 	pstM->I = 166;
 	return;
-};
+}
 
+VOID BicycleModel_CalcNextState(INOUT BICYCLE_MODEL_S *pstM)
+{
+	CHECK_PTR(pstM);
+	/*car dynamics*/
+	pstM->x = pstM->x + DT * pstM->dx;
+	pstM->dx = pstM->dx + DT * pstM->ddx;
+	
+	pstM->y = pstM->y + DT * pstM->dy;
+	pstM->dy = pstM->dy + DT * pstM->ddy;
+
+	pstM->psi = pstM->psi + DT * pstM->dpsi;
+	pstM->dpsi = pstM->dpsi + DT * pstM->ddpsi;
+
+	pstM->ddx = (pstM->m * pstM->dy * pstM->dpsi + 2 * pstM->F_xf + 2 * pstM->F_xr)/pstM->m;
+	pstM->ddy = (-1 * pstM->m * pstM->dx * pstM->dpsi + 2 *pstM->F_yf + 2 * pstM->F_yr)/pstM->m;
+	pstM->ddpsi = (2 * pstM->a * pstM->F_yf - 2 * pstM->b * pstM->F_yr)/pstM->I;	
+
+}
 
 int main()
 {
