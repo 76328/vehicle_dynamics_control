@@ -48,7 +48,13 @@ typedef struct BICYCLE_MODEL_TAG
 	float v_lr;
 	float v_cr;
 	float v_xr;
-	float v_ry;
+	float v_yr;
+	float delta_f;
+	float delta_r;
+	float F_lr;
+	float F_cr;
+	float F_lf;
+	float F_cf;
 } BICYCLE_MODEL_S;
 
 
