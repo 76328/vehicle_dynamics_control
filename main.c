@@ -96,7 +96,7 @@ int main()
 {
 	BICYCLE_MODEL_S stCar;
 	BicycleModel_Init(&stCar);
-	printf("hello world\n");
+	printf("hello world v2\n");
 	return 0;
 }
 
