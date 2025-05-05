@@ -1,3 +1,13 @@
+/*
+ * @file    文件名:controller.c
+ * @brief   文件简要说明:
+ * @details 文件详细描述:车辆横向控制器
+ * 
+ * @author  作者名:weifan.wang
+ * @email   作者邮箱:763280032@qq.com
+ * @date    创建日期:25-5-1
+ * @version 版本号:na
+ */
 #include "controller.h"
 #include "stdio.h"
 
