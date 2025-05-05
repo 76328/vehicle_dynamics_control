@@ -89,12 +89,7 @@ typedef struct BICYCLE_MODEL_TAG
 	float F_zr;
 	/*time*/
 	int t;
-	/*param*/
-
-
 } BICYCLE_MODEL_S;
-
-#define ZB 0.0000001
 
 VOID BicycleModel_Init(INOUT BICYCLE_MODEL_S *pstM)
 {
@@ -122,10 +117,6 @@ float BicycleModel_CalcSlipRatio(float r,float w,float vl)
 		{
 			result = (r*w/vl)-1;
 		}
-		else
-		{
-			result = (r*w/(vl+ZB))-1;
-		}
 	}
 	else
 	{
@@ -133,16 +124,11 @@ float BicycleModel_CalcSlipRatio(float r,float w,float vl)
 		{
 			result = 1-(vl/(r*w));
 		}
-		else
-		{
-			result = 1-(vl/(r*(w+ZB)));
-		}
-
 	}
 	return result;
 }
 
-float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
+float BicycleModel_CalcLongitudinalForce(float slpr,float Fz)
 {
 	float a1 = -21.3;
 	float a2 = 1144;
@@ -165,7 +151,7 @@ float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
 }
 
 
-float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
+float BicycleModel_CalcLateralForce(float slpa,float Fz)
 {
 	float Fzk = Fz*0.001;
 	float a1 = -22.1;
@@ -212,7 +198,7 @@ float BicycleModel_CalcSlipAngle(float vc,float vl)
 	}
 	else
 	{
-		//result=atan(vc/(vl+ZB));
+
 	}
 	return result;
 }
@@ -245,23 +231,21 @@ VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM,int iter)
 VOID BicycleModel_CalcNextState(INOUT BICYCLE_MODEL_S *pstM)
 {
 	CHECK_PTR(pstM);
-	/*slip angle*/
+	/*wheel modeling*/
 	pstM->alpha_f = BicycleModel_CalcSlipAngle(pstM->v_cf,pstM->v_lf);
 	pstM->alpha_r = BicycleModel_CalcSlipAngle(pstM->v_cr,pstM->v_lr);
 	pstM->s_f = BicycleModel_CalcSlipRatio(pstM->r,pstM->w_f,pstM->v_lf);
 	pstM->s_r = BicycleModel_CalcSlipRatio(pstM->r,pstM->w_r,pstM->v_lr);
-	pstM->F_lf = BicycleModel_CalcLongitudinalForce(pstM->s_f,U,pstM->F_zf);
-	pstM->F_lr = BicycleModel_CalcLongitudinalForce(pstM->s_r,U,pstM->F_zr);
-	pstM->F_cf = BicycleModel_CalcLateralForce(pstM->alpha_f,U,pstM->F_zf);
-	pstM->F_cr = BicycleModel_CalcLateralForce(pstM->alpha_r,U,pstM->F_zr);
+	pstM->F_lf = BicycleModel_CalcLongitudinalForce(pstM->s_f,pstM->F_zf);
+	pstM->F_lr = BicycleModel_CalcLongitudinalForce(pstM->s_r,pstM->F_zr);
+	pstM->F_cf = BicycleModel_CalcLateralForce(pstM->alpha_f,pstM->F_zf);
+	pstM->F_cr = BicycleModel_CalcLateralForce(pstM->alpha_r,pstM->F_zr);
 
 	pstM->F_yf = pstM->F_lf*sin(pstM->delta_f)+pstM->F_cf*cos(pstM->delta_f);
 	pstM->F_xf = pstM->F_lf*cos(pstM->delta_f)-pstM->F_cf*sin(pstM->delta_f);
-
 	pstM->F_yr = pstM->F_lr*sin(pstM->delta_r)+pstM->F_cr*cos(pstM->delta_r);
 	pstM->F_xr = pstM->F_lr*cos(pstM->delta_r)-pstM->F_cr*sin(pstM->delta_r);
 
-	/*wheel dynamics*/
 	pstM->v_yf = pstM->dy + pstM->a * pstM->dpsi;
 	pstM->v_yr = pstM->dy - pstM->b * pstM->dpsi;
 	pstM->v_xf = pstM->dx;
