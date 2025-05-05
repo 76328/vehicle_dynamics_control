@@ -1,3 +1,14 @@
+/*
+ * @file    文件名:main.c
+ * @brief   文件简要说明:VDC
+ * @details 文件详细描述:车辆动力学建模与控制
+ * 
+ * @author  作者名:weifan.wang
+ * @email   作者邮箱:763280032@qq.com
+ * @date    创建日期:25-5-1
+ * @version 版本号:na
+ */
+
 #include "stdio.h"
 #include "string.h"
 #include <unistd.h>
@@ -131,18 +142,6 @@ float BicycleModel_CalcSlipRatio(float r,float w,float vl)
 	return result;
 }
 
-//#define C (1.0) 
-//#define B (10.0)
-//#define E (-1.0)
-//#define Sv (0.01)
-
-/*float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
-{
-	float result = 0;
-
-	result = 0.001*Fz*u*sin(C*atan(B*slpr-E*(B*slpr-atan(B*slpr))));
-	return result;
-}*/
 float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
 {
 	float a1 = -21.3;
@@ -162,17 +161,10 @@ float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
 	float phi = (1-E)*slpr+(E/B)*atan(B*slpr);
 	float result = D * sin(C*atan(B*phi));
 
-	//result = 0.001*Fz*u*sin(C*atan(B*slpr-E*(B*slpr-atan(B*slpr))));
 	return result;
 }
 
 
-/*float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
-{
-	float result = 0;
-	result = 0.001*Fz*u*sin(C*atan(B*slpa-E*(B*slpa-atan(B*slpa)))) + Sv;
-	return result;
-}*/
 float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
 {
 	float Fzk = Fz*0.001;
@@ -209,7 +201,6 @@ float BicycleModel_CalcSlipAngle(float vc,float vl)
 	float angle = 0;
 	if(vl != 0)
 	{
-		//result=atan(vc/vl);
 		result =atan2f(vc,vl);
 		/*防止跳变*/
 		angle=fmod(result+3.141,2*3.141);
@@ -235,7 +226,6 @@ VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM,int iter)
 	{
 		return;
 	}
-	//printf("x: %f,y: %f,xabs: %f,yabs: %f\n",pstM->x,pstM->y,pstM->X_abs,pstM->Y_abs);
 	printf("time: %.2f s ",iter*DT);
 	PRT_FIELD_FLOAT(pstM,X_abs);
 	PRT_FIELD_FLOAT(pstM,Y_abs);
@@ -311,23 +301,17 @@ int main()
 	printf("hello world v3\n");
 	while(iter < 30000)
 	{
+		/*Accelerate to 54 km/h in 5 seconds*/
 		if(iter < 5000)
 		{
 			stCar.w_f = stCar.w_f+0.01;
 			stCar.w_r = stCar.w_f;
 		}
-		
-		/*if(iter < 1000)
-		{
-			stCar.delta_f = 0.1;
-		}
-		else if (iter < 2000)
-		{
-			stCar.delta_f = -0.1;
-		}*/
+		/*lateral controller（maintain Y_abs=2m）,step response*/
 		stCar.delta_f = Controller_Delta(2.0,stCar.Y_abs,stCar.psi);
-
+		/*calc next state*/
 		BicycleModel_CalcNextState(&stCar);
+		/*print vehicle state*/
 		BicycleModel_PrintState(&stCar,iter);
 		usleep(1000);
 		iter++;
