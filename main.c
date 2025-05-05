@@ -2,6 +2,7 @@
 #include "string.h"
 #include <unistd.h>
 #include <math.h>
+#include "controller.h"
 
 #define UCHAR unsigned char
 #define VOID void
@@ -225,7 +226,7 @@ float BicycleModel_CalcSlipAngle(float vc,float vl)
 	return result;
 }
 
-#define PRT_FIELD_FLOAT(st,field) printf("%-1s:%f ",#field, st->field)
+#define PRT_FIELD_FLOAT(st,field) printf("%-1s:%.4f ",#field, st->field)
 
 VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM,int iter)
 {
@@ -235,18 +236,19 @@ VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM,int iter)
 		return;
 	}
 	//printf("x: %f,y: %f,xabs: %f,yabs: %f\n",pstM->x,pstM->y,pstM->X_abs,pstM->Y_abs);
-	printf("iter: %d ",iter);
+	printf("time: %.2f s ",iter*DT);
 	PRT_FIELD_FLOAT(pstM,X_abs);
 	PRT_FIELD_FLOAT(pstM,Y_abs);
 	PRT_FIELD_FLOAT(pstM,F_yf);
 	PRT_FIELD_FLOAT(pstM,F_yr);
+	PRT_FIELD_FLOAT(pstM,delta_f);
 	PRT_FIELD_FLOAT(pstM,psi);
-	PRT_FIELD_FLOAT(pstM,dpsi);
-	PRT_FIELD_FLOAT(pstM,alpha_f);
-	PRT_FIELD_FLOAT(pstM,s_f);
-	PRT_FIELD_FLOAT(pstM,F_lf);
-	PRT_FIELD_FLOAT(pstM,v_cf);
-	PRT_FIELD_FLOAT(pstM,v_lf);
+	//PRT_FIELD_FLOAT(pstM,dpsi);
+	//PRT_FIELD_FLOAT(pstM,alpha_f);
+	//PRT_FIELD_FLOAT(pstM,s_f);
+	//PRT_FIELD_FLOAT(pstM,F_lf);
+	//PRT_FIELD_FLOAT(pstM,v_cf);
+	//PRT_FIELD_FLOAT(pstM,v_lf);
 	printf("\n");
 }
 
@@ -309,20 +311,21 @@ int main()
 	printf("hello world v3\n");
 	while(iter < 30000)
 	{
-		if(iter < 2000)
+		if(iter < 5000)
 		{
 			stCar.w_f = stCar.w_f+0.01;
 			stCar.w_r = stCar.w_f;
 		}
 		
-		if(iter < 1000)
+		/*if(iter < 1000)
 		{
 			stCar.delta_f = 0.1;
 		}
-		else
+		else if (iter < 2000)
 		{
-			stCar.delta_f = 0;
-		}
+			stCar.delta_f = -0.1;
+		}*/
+		stCar.delta_f = Controller_Delta(2.0,stCar.Y_abs,stCar.psi);
 
 		BicycleModel_CalcNextState(&stCar);
 		BicycleModel_PrintState(&stCar,iter);
