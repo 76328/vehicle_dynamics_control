@@ -75,6 +75,10 @@ typedef struct BICYCLE_MODEL_TAG
 	/*vertical load*/
 	float F_zf;
 	float F_zr;
+	/*time*/
+	int t;
+	/*param*/
+
 
 } BICYCLE_MODEL_S;
 
@@ -126,49 +130,123 @@ float BicycleModel_CalcSlipRatio(float r,float w,float vl)
 	return result;
 }
 
-#define C (1.0) 
-#define B (10.0)
-#define E (-1.0)
-#define Sv (0.01)
+//#define C (1.0) 
+//#define B (10.0)
+//#define E (-1.0)
+//#define Sv (0.01)
 
+/*float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
+{
+	float result = 0;
+
+	result = 0.001*Fz*u*sin(C*atan(B*slpr-E*(B*slpr-atan(B*slpr))));
+	return result;
+}*/
 float BicycleModel_CalcLongitudinalForce(float slpr,float u,float Fz)
 {
-	float result = 0;
-	result = Fz*u*sin(C*atan(B*slpr-E*(B*slpr-atan(B*slpr))));
+	float a1 = -21.3;
+	float a2 = 1144;
+	float a3 = 49.6;
+	float a4 = 226;
+	float a5 = 0.69;
+	float a6 = -0.006;
+	float a7 = 0.056;
+	float a8 = 0.486;
+	float Fzk = Fz * 0.001;
+	float D = a1 * pow(Fzk,2) + a2 * Fzk;
+	float C = 1.65;
+	float B = (a3 * pow(Fzk,2) +a4*Fzk)/(C*D*exp(a5*Fzk)); 
+	float E = a6 * pow(Fzk,2) +a7*Fzk +a8;
+
+	float phi = (1-E)*slpr+(E/B)*atan(B*slpr);
+	float result = D * sin(C*atan(B*phi));
+
+	//result = 0.001*Fz*u*sin(C*atan(B*slpr-E*(B*slpr-atan(B*slpr))));
 	return result;
 }
 
-float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
+
+/*float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
 {
 	float result = 0;
-	result = Fz*u*sin(C*atan(B*slpa-E*(B*slpa-atan(B*slpa)))) + Sv;
+	result = 0.001*Fz*u*sin(C*atan(B*slpa-E*(B*slpa-atan(B*slpa)))) + Sv;
 	return result;
+}*/
+float BicycleModel_CalcLateralForce(float slpa,float u,float Fz)
+{
+	float Fzk = Fz*0.001;
+	float a1 = -22.1;
+	float a2 = 1011;
+	float a3 = 1078;
+	float a4 = 1.82;
+	float a5 = 0.208;
+	float a6 = 0;
+	float a7 = -0.354;
+	float a8 = 0.707;
+	float a9 = 0.028;
+	float a10 = 0;
+	float a11 = 14.8;
+	float a12 = 0.022;
+	float a13 = 0;
+	float Camber = 0.0;
+	float C = 1.30;
+	float D = a1*pow(Fzk,2)+a2*Fzk;
+	float Dsh = a9*Camber;
+	float Dsv = (a10*pow(Fzk,2)+a11*Fzk)*Camber;
+	float E = a6*pow(Fzk,2)+a7*Fzk+a8;
+	float B = ((a3*sin(a4*atan(a5*Fzk)))/(C*D))*(1-a12*fabs(Camber));
+	float phi = (1-E)*(slpa+Dsh)+(E/B)*atan(B*(slpa+Dsh));
+
+	float result = D*sin(C*atan(B*phi))+Dsv;
+	return -result;//与仿真计算里的论文图像相反
 }
+
 
 float BicycleModel_CalcSlipAngle(float vc,float vl)
 {
 	float result = 0;
+	float angle = 0;
 	if(vl != 0)
 	{
-		result=atan(vc/vl);
+		//result=atan(vc/vl);
+		result =atan2f(vc,vl);
+		/*防止跳变*/
+		angle=fmod(result+3.141,2*3.141);
+		if(angle<0)
+		{
+			angle=angle+2*3.141;
+		}
+		result=angle-3.141;
 	}
 	else
 	{
-		result=atan(vc/(vl+ZB));
+		//result=atan(vc/(vl+ZB));
 	}
 	return result;
 }
 
 #define PRT_FIELD_FLOAT(st,field) printf("%-1s:%f ",#field, st->field)
 
-VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM)
+VOID BicycleModel_PrintState(IN BICYCLE_MODEL_S *pstM,int iter)
 {
 	CHECK_PTR(pstM);
+	if(0!=(iter%10))
+	{
+		return;
+	}
 	//printf("x: %f,y: %f,xabs: %f,yabs: %f\n",pstM->x,pstM->y,pstM->X_abs,pstM->Y_abs);
+	printf("iter: %d ",iter);
 	PRT_FIELD_FLOAT(pstM,X_abs);
 	PRT_FIELD_FLOAT(pstM,Y_abs);
-	PRT_FIELD_FLOAT(pstM,F_xf);
 	PRT_FIELD_FLOAT(pstM,F_yf);
+	PRT_FIELD_FLOAT(pstM,F_yr);
+	PRT_FIELD_FLOAT(pstM,psi);
+	PRT_FIELD_FLOAT(pstM,dpsi);
+	PRT_FIELD_FLOAT(pstM,alpha_f);
+	PRT_FIELD_FLOAT(pstM,s_f);
+	PRT_FIELD_FLOAT(pstM,F_lf);
+	PRT_FIELD_FLOAT(pstM,v_cf);
+	PRT_FIELD_FLOAT(pstM,v_lf);
 	printf("\n");
 }
 
@@ -229,13 +307,25 @@ int main()
 	BICYCLE_MODEL_S stCar;
 	BicycleModel_Init(&stCar);
 	printf("hello world v3\n");
-	while(iter < 10000)
+	while(iter < 30000)
 	{
-		stCar.w_f = 30;
-		stCar.w_r = 30;
-		stCar.delta_f = 0.01;
+		if(iter < 2000)
+		{
+			stCar.w_f = stCar.w_f+0.01;
+			stCar.w_r = stCar.w_f;
+		}
+		
+		if(iter < 1000)
+		{
+			stCar.delta_f = 0.1;
+		}
+		else
+		{
+			stCar.delta_f = 0;
+		}
+
 		BicycleModel_CalcNextState(&stCar);
-		BicycleModel_PrintState(&stCar);
+		BicycleModel_PrintState(&stCar,iter);
 		usleep(1000);
 		iter++;
 	}
